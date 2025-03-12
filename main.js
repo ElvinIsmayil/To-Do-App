@@ -1,141 +1,93 @@
-let todoInput = document.getElementById("todoInput");
-let todoItems = document.getElementById("todoItems");
-let todoButton = document.getElementById("todoButton");
+if(localStorage.getItem("tasks") === null)
+  localStorage.setItem("tasks","[]");
 
-const Toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.onmouseenter = Swal.stopTimer;
-    toast.onmouseleave = Swal.resumeTimer;
-  },
-});
+//Elements
+const todoInput = document.getElementById("todoInput");
+const todoButton = document.getElementById("todoButton");
+const todoItems = document.getElementById("todoItems");
 
-todoButton.addEventListener("click", function () {
-  if (todoInput.value.trim() === "") {
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "You cannot leave the input empty!",
-    });
+RetrieveDataFromLocalStorage();
+
+todoButton.addEventListener("click",function(){
+  AddTask();
+})
+
+todoInput.addEventListener("keypress",function(event){
+  if(event.key === "Enter"){
+    AddTask();
+  }
+})
+
+function AddTask(){
+  if(CheckIfNameExist(todoInput.value)){
+    const Toast = Swal.mixin({
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end',
+      timer: 3000,
+      timerProgressBar: true
+    })
+    Toast.fire('Task already exists', '', 'error')
     return;
   }
 
-  let newLi = document.createElement("li");
-  let input = document.createElement("input");
-  let span = document.createElement("span");
-  let editButton = document.createElement("button");
-  let deleteButton = document.createElement("button");
 
-  newLi.classList.add("list-group-item", "d-flex", "align-items-center");
+  // Takes string data from the local storage and converts it to json array 
+  const tasks = localStorage.getItem("tasks");
+  const tasksArray = JSON.parse(tasks);
 
-  input.classList.add("form-check-input", "me-3", "fs-5");
-  input.type = "checkbox";
+  // initiliaze task object
+  const task = {
+    text: todoInput.value,
+    id: Date.now(),
+    isCompleted: false
+  }
 
-  span.classList.add("fs-5", "flex-grow-1");
-  span.innerText = todoInput.value;
+  
+  tasksArray.push(task);
 
-  editButton.innerHTML = `<i class="bi bi-pencil-square"></i>`;
-  editButton.classList.add("btn", "btn-success", "mx-2", "editButton");
+  // json array is converted to string form and then overwritten to the local storage
+  const stringfiedArray = JSON.stringify(tasksArray);
+  localStorage.setItem("tasks",stringfiedArray);
 
-  deleteButton.innerHTML = `<i class="bi bi-trash-fill"></i>`;
-  deleteButton.classList.add("btn", "btn-danger", "deleteButton");
+  const Toast = Swal.mixin({
+    showConfirmButton: false,
+    toast: true,
+    position: 'top-end',
+    timer: 3000,
+    timerProgressBar: true
+  })
 
-  newLi.append(input, span, editButton, deleteButton);
+  //displaying the task in the ui when the task is added
+  const LiElement = document.createElement("li");
+  LiElement.innerText = task.text;
+  todoItems.appendChild(LiElement);
 
-  deleteButton.addEventListener("click", function () {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire({
-          title: "Deleted!",
-          text: "Your task has been deleted.",
-          icon: "success",
-        });
-        newLi.remove();
-      }
-    });
-  });
-
-  editButton.addEventListener("click", function () {
-    let editInput = document.createElement("input");
-    let characterCount = document.createElement("span");
-
-    editInput.classList.add("form-control", "form-control-sm");
-    editInput.value = span.innerText;
-
-    characterCount.classList.add("small", "d-block");
-    characterCount.innerText = `${editInput.value.length}/30`;
-
-    newLi.replaceChild(editInput, span);
-    editInput.insertAdjacentElement("afterend", characterCount);
-    editInput.focus();
-
-    let isCooldown = false;
-
-    editInput.addEventListener("blur", function () {
-      if (isCooldown) return;
-
-      if (editInput.value.trim() !== "" && editInput.value.length <= 30) {
-        span.innerText = editInput.value;
-        Toast.fire({
-          icon: "success",
-          title: "Task updated successfully!",
-        });
-      } else {
-        Toast.fire({
-          icon: "error",
-          title: "Error",
-          text: "Task length must be between 1-30 characters!",
-        });
-      }
-
-      isCooldown = true;
-      setTimeout(() => {
-        isCooldown = false;
-      }, 3000);
-
-      newLi.replaceChild(span, editInput);
-      characterCount.remove();
-    });
-
-    editInput.addEventListener("input", function () {
-      if (editInput.value.length <= 30) {
-        characterCount.innerText = `${editInput.value.length}/30`;
-        characterCount.style.color = "black";
-      } else {
-        characterCount.innerText = "30/30";
-        characterCount.style.color = "red";
-        editInput.value = editInput.value.substring(0, 30);
-      }
-    });
-
-    editInput.addEventListener("keypress", function (event) {
-      if (event.key === "Enter") {
-        editInput.blur();
-      }
-    });
-  });
-
-  todoItems.appendChild(newLi);
-  resetInput();
-
-  Toast.fire({
-    icon: "success",
-    title: "Task added successfully!",
-  });
-});
-
-function resetInput() {
-  todoInput.value = "";
+  Toast.fire('Task has been added', '', 'success')
+  console.log(task)
 }
+
+function CheckIfNameExist(text){
+  const tasks = localStorage.getItem("tasks");
+  const tasksArray = JSON.parse(tasks)
+  const existElement =  tasksArray.find(e=>e.text==text)
+  if(existElement != null)
+    return true;
+  return false;
+
+}
+
+// when the page loads the string form of the array loads from localstorage and then converts it to the real json array (creating elements in loop)
+function RetrieveDataFromLocalStorage(){
+  const tasks = localStorage.getItem("tasks");
+  const tasksArray = JSON.parse(tasks);
+  tasksArray.forEach(element => {
+    const LiElement = document.createElement("li");
+    LiElement.innerText = element.text;
+    todoItems.appendChild(LiElement);
+  });
+}
+
+
+
+
