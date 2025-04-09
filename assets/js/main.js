@@ -6,6 +6,15 @@ const todoInput = document.getElementById("todoInput");
 const todoButton = document.getElementById("todoButton");
 const todoItems = document.getElementById("todoItems");
 
+//Toast config
+const Toast = Swal.mixin({
+  showConfirmButton: false,
+  toast: true,
+  position: 'top-end',
+  timer: 3000,
+  timerProgressBar: true
+})
+
 RetrieveDataFromLocalStorage();
 
 todoButton.addEventListener("click",function(){
@@ -19,15 +28,16 @@ todoInput.addEventListener("keypress",function(event){
 })
 
 function AddTask(){
-  if(CheckIfNameExist(todoInput.value)){
-    const Toast = Swal.mixin({
-      showConfirmButton: false,
-      toast: true,
-      position: 'top-end',
-      timer: 3000,
-      timerProgressBar: true
-    })
-    Toast.fire('Task already exists', '', 'error')
+
+  const taskText = todoInput.value.trim();
+
+  if(CheckIfNameExist(taskText)){
+    Toast.fire('Task already exists!', '', 'error')
+    return;
+  }
+
+  if(taskText === ''){
+    Toast.fire("Task cannot be empty!",'', 'error' )
     return;
   }
 
@@ -50,21 +60,13 @@ function AddTask(){
   const stringfiedArray = JSON.stringify(tasksArray);
   localStorage.setItem("tasks",stringfiedArray);
 
-  const Toast = Swal.mixin({
-    showConfirmButton: false,
-    toast: true,
-    position: 'top-end',
-    timer: 3000,
-    timerProgressBar: true
-  })
-
   //displaying the task in the ui when the task is added
   const LiElement = document.createElement("li");
   LiElement.innerText = task.text;
   todoItems.appendChild(LiElement);
+  todoInput.value = '';
 
   Toast.fire('Task has been added', '', 'success')
-  console.log(task)
 }
 
 function CheckIfNameExist(text){
